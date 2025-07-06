@@ -13,15 +13,22 @@
 % Here I load the required libraries, setup the data folders, etc. 
 
 % Set folder names
-curr_folder = pwd;
-repo_folder = fullfile(curr_folder, '..');
+[parent_folder_path, curr_folder, ~] = fileparts(pwd);
+if contains(curr_folder, "cshl")
+    repo_folder = pwd;
+elseif contains(parent_folder_path, "cshl") && contains(curr_folder, "code")
+    repo_folder = parent_folder_path; 
+else
+    error("Use 'Browse folder' to move matlab to cshl code folder");
+end
 data_folder = fullfile(repo_folder, 'data');
+code_folder = fullfile(repo_folder, 'code');
 
 % Dataset name
 dataset_name = '20240706a_00004_00001.tif'
 
 % Load external libraries (that in in toolbox)
-addpath(genpath(fullfile(pwd, 'toolbox/')));
+addpath(genpath(fullfile(code_folder, 'toolbox/')));
 %% Loading and visualizing datasets
 % In this section, we will load the dataset and visualize the volume as well 
 % as the linked metadata acquired during imaging. We will be using the scanimage 
@@ -59,7 +66,7 @@ disp(['Number of images in volumes: ', num2str(image_count)])
 % Show the first image in the stack with automatic grayscale scaling and magnify it (128x128 is too small)
 imshow(volumes(:, :, 1), [], "InitialMagnification", 500); 
 % Display image based on a slide location
-curr_ind=7;
+curr_ind=17;
 imshow(volumes(:, :, curr_ind), [], "InitialMagnification", 500);
 %% 
 % *Task:* Move the slide and visualize how the images look at locations 16, 
@@ -141,7 +148,7 @@ f_meta.hStackManager
 neuron_slice = 7; % try experimenting with different values
 
 % extract SOIs
-SOIs = extractSOIs(volumes, neuron_slice, num_total_slices);
+SOIs = volumes(:,:,neuron_slice:num_total_slices:end);
 
 % Compute mean (along the third /stack dimension)
 mean_SOI = mean(SOIs, 3);
@@ -258,5 +265,14 @@ xlabel("Time (s)");
 ylabel("Fluorescence (\DeltaF / F_0)");
 title("Estimated Activity");
 grid on;
+%% (Optional) Image registration
+% Sometimes images slowly or periodically drift during an experiment because 
+% of many reasons (heatbeat, drift etc). We need to correct for it to get accurate 
+% activity in our ROIs. There are multiple ways to do this - here we use an image 
+% match method.
+
+aligned_SOIs = zeros(So)
+
+
 %% 
 %
